@@ -37,7 +37,7 @@ public class VoteTest extends ServerTestBase {
         ServerInfo[] sis = new ServerInfo[4];
         try {
             // simple vote
-            String servers = "1,127.0.0.1:4001;2,127.0.0.1:4002;3,127.0.0.1:4003;4,127.0.0.1:4004";
+            String servers = "1,127.0.0.1:14401;2,127.0.0.1:14402;3,127.0.0.1:14403;4,127.0.0.1:14404";
             String members = "1,2,3";
             String observers = "4";
             sis[0] = createServer(1, servers, members, observers);

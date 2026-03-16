@@ -52,7 +52,7 @@ public class ServerClientLockTest {
         ServerInfo s1;
 
         public void startServers() throws Exception {
-            String servers = "1,127.0.0.1:4001";
+            String servers = "1,127.0.0.1:14401";
             String members = "1";
             String observers = "";
 
@@ -149,7 +149,7 @@ public class ServerClientLockTest {
         c.autoRenewalRetryMillis = new long[]{tick(5), tick(1000)};
         Client client = new Client(c, new RaftClientConfig(), new NioClientConfig());
         client.start();
-        client.getRaftClient().clientAddNode("1,127.0.0.1:5001");
+        client.getRaftClient().clientAddNode("1,127.0.0.1:15501");
         client.getRaftClient().clientAddOrUpdateGroup(groupId, new int[]{1});
         return client;
     }

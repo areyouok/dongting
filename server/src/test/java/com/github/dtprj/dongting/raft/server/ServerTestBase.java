@@ -57,7 +57,7 @@ public class ServerTestBase {
 
     private final boolean openServicePort;
 
-    private static DefaultKvPerf kvPerf = new DefaultKvPerf();
+    private static final DefaultKvPerf kvPerf = new DefaultKvPerf();
 
     protected boolean startAfterCreate = true;
     protected int initTerm = 0;
@@ -108,14 +108,14 @@ public class ServerTestBase {
 
     protected ServerInfo createServer(int nodeId, String servers, String nodeIdOfMembers,
                                       String nodeIdOfObservers) throws Exception {
-        int replicatePort = 4000 + nodeId;
+        int replicatePort = 14400 + nodeId;
         RaftServerConfig serverConfig = new RaftServerConfig();
         serverConfig.servers = servers;
         serverConfig.nodeId = nodeId;
         serverConfig.replicatePort = replicatePort;
         serverConfig.pingInterval = tick(1);
         if (openServicePort) {
-            serverConfig.servicePort = 5000 + nodeId;
+            serverConfig.servicePort = 15500 + nodeId;
         }
         serverConfig.electTimeout = tick(electTimeout);
         serverConfig.heartbeatInterval = (long) (serverConfig.electTimeout * 0.4);

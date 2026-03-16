@@ -92,7 +92,7 @@ public class WatchManagerTest implements KvListener {
         ServerInfo s3;
 
         public void startServers() throws Exception {
-            String servers = "1,127.0.0.1:4001;2,127.0.0.1:4002;3,127.0.0.1:4003";
+            String servers = "1,127.0.0.1:14401;2,127.0.0.1:14402;3,127.0.0.1:14403";
             String members = "1,2,3";
             String observers = "";
 
@@ -192,7 +192,7 @@ public class WatchManagerTest implements KvListener {
             }
         };
         client.start();
-        client.getRaftClient().clientAddNode("1,127.0.0.1:5001;2,127.0.0.1:5002;3,127.0.0.1:5003");
+        client.getRaftClient().clientAddNode("1,127.0.0.1:15501;2,127.0.0.1:15502;3,127.0.0.1:15503");
         client.getRaftClient().clientAddOrUpdateGroup(groupId, new int[]{1, 2, 3});
         manager = (MockWatchManager) client.getWatchManager();
         if (setListener) {
