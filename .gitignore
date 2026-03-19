@@ -1,6 +1,11 @@
 .DS_Store
 *.versionsBackup
 
+.hl
+
+# oh-my-openagent
+.sisyphus
+
 # profiler dump
 *.jfr
 
