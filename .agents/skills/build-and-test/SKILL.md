@@ -20,7 +20,7 @@ This skill provides commands and patterns for building and testing the Dongting 
 
 | Command | Purpose |
 |---------|---------|
-| `mvn clean test -Dtick=3` | Run all unit tests, takes about 25 seconds to run. |
+| `mvn clean test -Dtick=3` | Run all unit tests, takes about 25 seconds to run. It is recommended to redirect to a temporary file, as the large amount of output will be truncated otherwise. |
 | `mvn -pl module -am test -Dtest=ClassName -Dtick=3 -Dsurefire.failIfNoSpecifiedTests=false` | Run single test class |
 | `mvn -pl module -am test -Dtest=ClassName#method -Dtick=3 -Dsurefire.failIfNoSpecifiedTests=false` | Run single test method |
 
@@ -30,7 +30,7 @@ This skill provides commands and patterns for building and testing the Dongting 
 
 | Command | Purpose |
 |---------|---------|
-| `mvn verify -DskipUTs -Dtick=3` | Run all integration tests, takes about 100 seconds to run.  |
+| `mvn verify -DskipUTs -Dtick=3` | Run all integration tests, takes about 100 seconds to run. It is recommended to redirect to a temporary file, as the large amount of output will be truncated otherwise. |
 | `mvn -pl it-test -am verify -DskipUTs=true -Dit.test=ClassName -Dtick=3` | Run single integration test |
 
 **Note**: Package must be completed before running integration tests. After modifying code, always run `mvn clean package -DskipUTs` first.
