@@ -78,7 +78,7 @@ Parameters:
 
 ## High-Risk Operations
 
-- `execute_terminal_command`: Runs ANY shell command with full system permissions
+- `execute_terminal_command`: **DO NOT USE** for shell commands. Use Bash tool directly instead — it's simpler and more reliable. Only use this for IDE-specific terminal features.
 - `rename_refactoring` & `replace_text_in_file`: Modifies code globally
 - `create_new_file`: Creates files immediately
 - `reformat_file`: Modifies formatting without confirmation
