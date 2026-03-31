@@ -3,6 +3,8 @@
 
 [中文](README_CN.md)
 
+> **Note**: 0.9 version under development may not be compatible with 0.8.x.
+
 ## Table of Contents
 
 - [Introduce](#introduce)
