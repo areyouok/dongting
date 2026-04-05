@@ -166,11 +166,6 @@ public class SimpleStressIT {
                 log.warn("Stress threads did not complete within 3 seconds");
             }
 
-            int totalErrors = stressErrors.get();
-            log.info("Total stress errors: {}", totalErrors);
-            assertEquals(0, totalErrors, "Stress test should complete without errors");
-
-
             log.info("Step 8: Cleaning up resources");
             if (stressExecutor != null) {
                 stressExecutor.shutdownNow();
@@ -201,6 +196,10 @@ public class SimpleStressIT {
             processManager.stopAllNodes(20);
             log.info("=== " + SimpleStressIT.class.getSimpleName() + " completed ===");
         }
+
+        int totalErrors = stressErrors.get();
+        log.info("Total stress errors: {}", totalErrors);
+        assertEquals(0, totalErrors, "Stress test should complete without errors");
     }
 
     private KvClient createKvClient() {
