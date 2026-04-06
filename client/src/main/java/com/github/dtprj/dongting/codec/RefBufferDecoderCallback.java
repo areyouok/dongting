@@ -49,6 +49,7 @@ public class RefBufferDecoderCallback extends DecoderCallback<RefBuffer> {
         bb.put(buffer);
         if (end) {
             bb.flip();
+            r.prepareForEncode();
             // release by user code
         }
         return true;

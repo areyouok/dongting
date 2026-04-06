@@ -30,9 +30,9 @@ public final class RefBuffer extends RefCount implements Encodable {
     private ByteBuffer buffer;
     private final ByteBufferPool pool;
     private final boolean direct;
-    private final int size;
-
     private final RefBuffer root;
+
+    private int encodeSize;
 
     RefBuffer(boolean plain, ByteBufferPool pool, int requestSize, int threshold) {
         super(plain, !pool.isDirect() && requestSize < threshold);
@@ -44,7 +44,7 @@ public final class RefBuffer extends RefCount implements Encodable {
             this.buffer = pool.borrow(requestSize);
             this.pool = pool;
         }
-        this.size = this.buffer.remaining();
+        this.encodeSize = -1;
         this.root = null;
     }
 
@@ -54,7 +54,7 @@ public final class RefBuffer extends RefCount implements Encodable {
         this.pool = null;
         this.direct = root.direct;
         this.buffer = root.buffer.slice();
-        this.size = absoluteLimit - absolutePos;
+        this.encodeSize = absoluteLimit - absolutePos;
         this.buffer.limit(absoluteLimit);
         this.buffer.position(absolutePos);
     }
@@ -67,7 +67,7 @@ public final class RefBuffer extends RefCount implements Encodable {
         this.buffer = buf;
         this.pool = null;
         this.direct = buf.isDirect();
-        this.size = buf.remaining();
+        this.encodeSize = buf.remaining();
         this.root = null;
     }
 
@@ -141,6 +141,9 @@ public final class RefBuffer extends RefCount implements Encodable {
 
     @Override
     public boolean encode(EncodeContext context, ByteBuffer destBuffer) {
+        if (encodeSize < 0) {
+            throw new IllegalStateException("prepareForEncode() not called");
+        }
         ByteBuffer src = this.buffer;
         if (src == null || src.remaining() == 0) {
             return true;
@@ -172,6 +175,13 @@ public final class RefBuffer extends RefCount implements Encodable {
 
     @Override
     public int actualSize() {
-        return size;
+        if (encodeSize < 0) {
+            throw new IllegalStateException("prepareForEncode() not called");
+        }
+        return encodeSize;
+    }
+
+    public void prepareForEncode() {
+        this.encodeSize = this.buffer.remaining();
     }
 }

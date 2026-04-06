@@ -696,6 +696,7 @@ class LeaderInstallFrame extends AbstractLeaderRepFrame {
     private FiberFuture<Void> readerCallback(RefBuffer buf, Integer readBytes) {
         buf.getBuffer().clear();
         buf.getBuffer().limit(readBytes);
+        buf.prepareForEncode();
         return sendInstallSnapshotReq(buf, false, false);
     }
 

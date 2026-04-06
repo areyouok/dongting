@@ -148,6 +148,7 @@ public abstract class AbstractCodecCallback<T> {
             return null;
         } else {
             resultBuf.flip();
+            result.prepareForEncode();
             return result;
         }
     }
