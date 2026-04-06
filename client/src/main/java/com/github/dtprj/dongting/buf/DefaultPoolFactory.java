@@ -54,21 +54,42 @@ public class DefaultPoolFactory implements PoolFactory {
     }
 
     private static SimpleByteBufferPool createGlobalPool(boolean direct) {
-        // Thread safe pool should use a dedicated timestamp
+        int[] minCount = calcByMem(DEFAULT_GLOBAL_MIN_COUNT);
+        int[] maxCount = calcByMem(DEFAULT_GLOBAL_MAX_COUNT);
+        // Thread safe pool should use a dedicated timestamp, pass null, SimpleByteBufferPool will create one
         SimpleByteBufferPoolConfig c = new SimpleByteBufferPoolConfig(
-                null, direct, 0, true, DEFAULT_GLOBAL_SIZE, DEFAULT_GLOBAL_MIN_COUNT,
-                DEFAULT_GLOBAL_MAX_COUNT, 60000,
-                calcTotalSize(DEFAULT_GLOBAL_SIZE, DEFAULT_GLOBAL_MAX_COUNT) / 2);
+                null, direct, 0, true, DEFAULT_GLOBAL_SIZE, minCount,
+                maxCount, 60000, calcTotalSize(DEFAULT_GLOBAL_SIZE, maxCount) / 2);
         return new SimpleByteBufferPool(c);
     }
 
     @Override
     public ByteBufferPool createPool(Timestamp ts, boolean direct) {
-        SimpleByteBufferPoolConfig c = new SimpleByteBufferPoolConfig(ts, direct, direct ? 0 : DEFAULT_THRESHOLD, false,
-                DEFAULT_SMALL_SIZE, DEFAULT_SMALL_MIN_COUNT, DEFAULT_SMALL_MAX_COUNT, 20000,
-                calcTotalSize(DEFAULT_SMALL_SIZE, DEFAULT_SMALL_MAX_COUNT) / 2);
+        int[] minCount = calcByMem(DEFAULT_SMALL_MIN_COUNT);
+        int[] maxCount = calcByMem(DEFAULT_SMALL_MAX_COUNT);
+        SimpleByteBufferPoolConfig c = new SimpleByteBufferPoolConfig(ts, direct,
+                direct ? 0 : DEFAULT_THRESHOLD, false,
+                DEFAULT_SMALL_SIZE, minCount, maxCount, 20000,
+                calcTotalSize(DEFAULT_SMALL_SIZE, maxCount) / 2);
         SimpleByteBufferPool p1 = new SimpleByteBufferPool(c);
         return new TwoLevelPool(direct, p1, direct ? GLOBAL_DIRECT_POOL : GLOBAL_HEAP_POOL);
+    }
+
+    private static int[] calcByMem(int[] defaultSizes) {
+        long max = Runtime.getRuntime().maxMemory();
+        int[] sizes = new int[defaultSizes.length];
+        for (int i = 0; i < defaultSizes.length; i++) {
+            if (max < 1.01 * 1024 * 1024 * 1024) {
+                sizes[i] = Math.max(defaultSizes[i] / 4, 1);
+            } else if (max < 2.01 * 1024 * 1024 * 1024) {
+                sizes[i] = Math.max(defaultSizes[i] / 2, 1);
+            } else if (max >= 8L * 1000 * 1000 * 1000) {
+                sizes[i] = defaultSizes[i] * 2;
+            } else {
+                sizes[i] = defaultSizes[i];
+            }
+        }
+        return sizes;
     }
 
     @Override
