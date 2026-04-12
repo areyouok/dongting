@@ -189,7 +189,9 @@ public class AsyncIoTask implements CompletionHandler<Integer, Void>, BiConsumer
                 return false;
             }
         });
-        fiberGroup.fireFiber(retryFiber);
+        if (!fiberGroup.fireFiber(retryFiber)) {
+            future.fireCompleteExceptionally(new RaftException("retry failed because fiber group is stopped"));
+        }
     }
 
     // this method set to protected for mock error in unit test
@@ -235,6 +237,7 @@ public class AsyncIoTask implements CompletionHandler<Integer, Void>, BiConsumer
                         fiberGroup.getExecutor().execute(() -> retry(e));
                     } catch (RejectedExecutionException ee) {
                         log.error("force retry rejected because shutdown: {}", fiberGroup.name);
+                        // can't complete future because fiber group is stopped
                     }
                 }
             });
