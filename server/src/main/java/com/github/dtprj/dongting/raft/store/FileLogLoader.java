@@ -57,7 +57,8 @@ class FileLogLoader implements RaftLog.LogIterator {
     private final IdxOps idxFiles;
     private final LogFileQueue logFiles;
     private final RaftGroupConfigEx groupConfig;
-    private final ByteBuffer readBuffer;
+    private ByteBuffer readBuffer;
+    private boolean loading;
     private final TailCache tailCache;
     private final ByteBufferPool directPool;
 
@@ -114,8 +115,8 @@ class FileLogLoader implements RaftLog.LogIterator {
 
     @Override
     public FiberFrame<List<LogItem>> next(long index, int limit, int bytesLimit) {
-        if (error || close) {
-            BugLog.log("iterator state error: {},{}", error, close);
+        if (error || close || loading) {
+            BugLog.log("iterator state error: {},{},{}", error, close, loading);
             throw new RaftException("iterator state error");
         }
         if (nextIndex != -1 && index != nextIndex) {
@@ -156,11 +157,14 @@ class FileLogLoader implements RaftLog.LogIterator {
         @Override
         protected FrameCallResult doFinally() {
             decodeContext.reset(decoder);
+            loading = false;
+            releaseIfNecessary();
             return Fiber.frameReturn();
         }
 
         @Override
         public FrameCallResult execute(Void input) {
+            loading = true;
             if (nextIndex == -1) {
                 return Fiber.call(idxFiles.loadLogPos(startIndex), this::resumeAfterFirstPosLoad);
             } else {
@@ -413,8 +417,15 @@ class FileLogLoader implements RaftLog.LogIterator {
     @Override
     public void close() {
         if (!close) {
-            directPool.release(readBuffer);
+            close = true;
+            releaseIfNecessary();
         }
-        close = true;
+    }
+
+    private void releaseIfNecessary() {
+        if (close && !loading) {
+            directPool.release(readBuffer);
+            readBuffer = null;
+        }
     }
 }
