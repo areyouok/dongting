@@ -6,82 +6,45 @@ description: |
 
 # IntelliJ IDEA MCP Skill
 
-## Critical Requirements
-
-- **IDEA MUST be running** with MCP server connected
-- **Permission dialogs** in IDEA must be accepted for commands to execute
-
 ## Path Rules (Most Common Error Source)
 
 | Parameter | Path Type | Example |
 |-----------|-----------|---------|
 | `projectPath` | **ABSOLUTE** | `/Users/huangli/dt/dongting` |
-| `filePath`, `pathInProject`, `directoryPath` | **RELATIVE** | `server/src/main/java/...` |
+| `filePath`, `pathInProject`, `directoryPath`, `contextPath` | **RELATIVE** | `server/src/main/java/...` |
 
-## Key Workflows
+Getting this wrong is the #1 cause of "file not found" errors.
 
-### Check Compilation Errors
-```yaml
-Tool: IntelliJ-IDEA_get_file_problems
-Parameters:
-  projectPath: "/Users/huangli/dt/dongting"
-  filePath: "server/src/main/java/.../SomeFile.java"
-  errorsOnly: true
-```
-More accurate than LSP for multi-module Maven projects.
+## Gotchas and Tips
 
-### Run Tests
-```yaml
-Tool: IntelliJ-IDEA_execute_run_configuration
-Parameters:
-  projectPath: "/Users/huangli/dt/dongting"
-  configurationName: "TtlManagerTest"
-  timeout: 120000  # 2 minutes for tests
-```
+### Two Search API Families
 
-### Search Code
-```yaml
-Tool: IntelliJ-IDEA_search_in_files_by_text
-Parameters:
-  projectPath: "/Users/huangli/dt/dongting"
-  searchText: "DtLog.getLogger"
-  caseSensitive: true
-```
+IDEA MCP has two sets of search tools that return different formats. Pick the right one:
 
-### Safe Refactoring
-1. Search first: `search_in_files_by_text` to understand scope
-2. Rename: `rename_refactoring` with `symbolName` and `newName`
-3. Verify: `get_file_problems` to check for errors
+- **`search_in_files_by_text` / `search_in_files_by_regex`** — Returns matched lines with `||highlight||` markers. Good for quick "where is this string used" lookups. Supports `fileMask` filter.
+- **`search_text` / `search_regex` / `search_file` / `search_symbol`** — Returns structured results with exact coordinates (line, column, byte offsets). Supports `paths` glob filters and `!` excludes. Use this when you need precise locations for further operations.
+  - `search_symbol` is especially powerful — semantic symbol lookup (classes, methods, fields) returning full code snippets.
 
-## Tool Selection Guide
+### `execute_terminal_command` Does Not Use Shell by Default
 
-| Task | Best Tool | Why |
-|------|-----------|-----|
-| Java errors/warnings | IDEA `get_file_problems` | More accurate than LSP |
-| Run tests | IDEA `execute_run_configuration` | Proper test environment |
-| Rename refactoring | IDEA `rename_refactoring` | Semantic, cross-file updates |
-| Search code | IDEA `search_in_files_by_*` | Fast indexed search |
-| Find files | IDEA `find_files_by_*` | Fast indexed search |
-| Read files | LSP `read` or IDEA `get_file_text_by_path` | Either works |
-| Build/compile | Bash `mvn` | More control, reproducible |
-| Git operations | Bash `git` | IDEA MCP lacks git tools |
+Without `executeInShell: true`, shell features like `$()` expansion, pipes, and wildcards won't work. For most shell commands, prefer the Bash tool directly.
 
-## Timeout Recommendations
+### `rename_refactoring` Takes Symbol Name, Not Position
 
-| Operation | Timeout |
-|-----------|---------|
-| File/text search | 30000-60000 |
-| Get file problems | 15000 |
-| Run configuration | 120000-300000 |
-| Build project | 300000 |
-| Refactoring | 60000 |
+Parameters are `symbolName` (the exact identifier string) and `newName`, not file path + line/column. This is different from LSP-based rename.
+
+### `build_project` for Single-File Compilation
+
+`build_project` with `filesToRebuild` parameter compiles specific files much faster than running `mvn compile`. Useful for quick verification after edits.
+
+### `get_file_problems` vs LSP Diagnostics
+
+For multi-module Maven projects, `get_file_problems` is significantly more accurate than LSP `lsp_diagnostics`. Prefer it for Java error checking.
 
 ## High-Risk Operations
 
-- `execute_terminal_command`: **DO NOT USE** for shell commands. Use Bash tool directly instead — it's simpler and more reliable. Only use this for IDE-specific terminal features.
-- `rename_refactoring` & `replace_text_in_file`: Modifies code globally
-- `create_new_file`: Creates files immediately
-- `reformat_file`: Modifies formatting without confirmation
+- `rename_refactoring` & `replace_text_in_file` — Modify code globally, verify with `get_file_problems` after use
+- `reformat_file` — Modifies formatting without confirmation
 
 ## Troubleshooting
 
@@ -89,5 +52,4 @@ Parameters:
 |-------|----------|
 | Connection refused | Verify IDEA running with MCP plugin |
 | Request timed out | Accept permission dialog in IDEA |
-| File not found | Check absolute vs relative path |
-| No occurrences found | Verify `projectPath` and file paths |
+| File not found | Check absolute vs relative path (see Path Rules above) |
