@@ -247,10 +247,14 @@ public class RaftClient extends AbstractLifeCircle {
         } else {
             gi = new GroupInfo(groupId, unmodifiableList(managedServers), epoch, leader, true);
             log.info("find leader for group {}", groupId);
+        }
+        // Publish the new group before leader lookup. The queryRaftServerStatus() in findLeader()
+        // may complete immediately and re-enter processLeaderQueryResult() in the current thread via CompletableFuture.
+        groups.put(groupId, gi);
+        if (gi.leaderFuture != null) {
             findLeader(gi, gi.servers.iterator());
             finishOldGroupFutureIfNecessary(gi, oldGroupInfo);
         }
-        groups.put(groupId, gi);
     }
 
     private GroupInfo createAndPutGroupInfo(GroupInfo old, RaftNode leader, boolean createFuture) {
