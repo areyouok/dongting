@@ -40,7 +40,7 @@ Features are as follows:
   * Natively supports tree-like directories, the complexity of many operations is O(1), such as watching directories, very efficient.
   * Supports temporary directories, which will be automatically deleted as a whole after TTL expires. The deletion operation is atomic.
   * Does not support transactions, but provides CAS and very easy-to-use distributed locks.
-* **(Planned) MQ (message queues)**: Use RAFT log as message queue log.
+* **(Developing) MQ (message queues)**: Use RAFT log as message queue log.
 
 # 10X Throughput
 Dongting is developed using performance-oriented programming.
