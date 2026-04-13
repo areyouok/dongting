@@ -259,11 +259,13 @@ public class RaftClient extends AbstractLifeCircle {
 
     private GroupInfo createAndPutGroupInfo(GroupInfo old, RaftNode leader, boolean createFuture) {
         GroupInfo gi = new GroupInfo(old.groupId, old.servers, old.serversEpoch + 1, leader, createFuture);
-        finishOldGroupFutureIfNecessary(gi, old);
         groups.put(gi.groupId, gi);
+        finishOldGroupFutureIfNecessary(gi, old);
         return gi;
     }
 
+    // The caller must ensure that groups.put() has been invoked before calling this method,
+    // so that re-entry via CompletableFuture callbacks can read the latest state from the map.
     private void finishOldGroupFutureIfNecessary(GroupInfo newGroupInfo, GroupInfo oldGroupInfo) {
         // use new leader future to complete the old one
         if (oldGroupInfo != null && oldGroupInfo.leaderFuture != null && !oldGroupInfo.leaderFuture.isDone()) {
@@ -664,13 +666,12 @@ public class RaftClient extends AbstractLifeCircle {
 
     private void findLeader(GroupInfo gi, Iterator<RaftNode> it) {
         if (!it.hasNext()) {
-            //noinspection DataFlowIssue
-            gi.leaderFuture.completeExceptionally(new RaftException("can't find leader for group " + gi.groupId));
-
             log.error("can't find leader for group {}", gi.groupId);
             // set new group info, to trigger next find
             GroupInfo newGroupInfo = GroupInfo.createByLastFindFailTime(gi, new DtTime());
             groups.put(gi.groupId, newGroupInfo);
+            //noinspection DataFlowIssue
+            gi.leaderFuture.completeExceptionally(new RaftException("can't find leader for group " + gi.groupId));
             return;
         }
         RaftNode node = it.next();
@@ -750,8 +751,11 @@ public class RaftClient extends AbstractLifeCircle {
             if (e != null) {
                 log.warn("connect to leader {} fail: {}", leader, e.toString());
                 RaftException re = new RaftException("connect to leader " + leader + " fail", e);
+                // Publish fallback group info before completing the future. The completion callback
+                // may re-enter RaftClient immediately and should observe the updated map state.
+                GroupInfo newGroupInfo = new GroupInfo(gi.groupId, gi.servers, gi.serversEpoch + 1, null, false);
+                groups.put(gi.groupId, newGroupInfo);
                 gi.leaderFuture.completeExceptionally(re);
-                createAndPutGroupInfo(gi, null, false);
             } else {
                 log.info("group {} connected to leader: {}", gi.groupId, leader);
                 createAndPutGroupInfo(gi, leader, false);
