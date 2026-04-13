@@ -416,10 +416,8 @@ class AppendFiberFrame extends AbstractAppendFrame<AppendReq> {
 
                 log.info("local log truncate to {}(inclusive)", truncateIndex);
 
-                TailCache tailCache = reqInfo.raftGroup.groupComponents.raftStatus.tailCache;
-                tailCache.truncate(truncateIndex);
                 return Fiber.call(gc.raftLog.truncateTail(truncateIndex),
-                        v -> afterTruncate(req.prevLogIndex, req.prevLogTerm));
+                        v -> afterTruncate(truncateIndex, req.prevLogIndex, req.prevLogTerm));
             }
         } else {
             log.info("follower suggest term={}, index={}, groupId={}", pos.getLeft(), pos.getRight(), raftStatus.groupId);
@@ -428,7 +426,10 @@ class AppendFiberFrame extends AbstractAppendFrame<AppendReq> {
         }
     }
 
-    private FrameCallResult afterTruncate(long matchIndex, int matchTerm) {
+    private FrameCallResult afterTruncate(long truncateIndex, long matchIndex, int matchTerm) {
+        TailCache tailCache = reqInfo.raftGroup.groupComponents.raftStatus.tailCache;
+        tailCache.truncate(truncateIndex);
+
         RaftStatusImpl raftStatus = gc.raftStatus;
 
         raftStatus.truncating = false;
