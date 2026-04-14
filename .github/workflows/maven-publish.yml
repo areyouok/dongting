@@ -86,18 +86,11 @@ jobs:
         fi
         JAVA_VERSION_SUFFIX=$(printf '%s' "$JAVA_VERSION" | sed 's/[^0-9A-Za-z]/-/g')
         echo "java_version=$JAVA_VERSION" >> "$GITHUB_OUTPUT"
+        echo "base_name=dongting-dist-${ASSET_SUFFIX}-jre${JAVA_VERSION_SUFFIX}" >> "$GITHUB_OUTPUT"
         echo "asset_name=dongting-dist-${ASSET_SUFFIX}-jre${JAVA_VERSION_SUFFIX}.zip" >> "$GITHUB_OUTPUT"
 
     - name: Build release asset
-      run: mvn -B clean package -DskipUTs -PaddJRE --file pom.xml
-
-    - name: Rename release asset
-      shell: bash
-      env:
-        ASSET_NAME: ${{ steps.metadata.outputs.asset_name }}
-      run: |
-        test -f target/dongting-dist.zip
-        mv -v target/dongting-dist.zip "target/${ASSET_NAME}"
+      run: mvn -B clean package -DskipUTs -PaddJRE -Ddist.basename=${{ steps.metadata.outputs.base_name }} --file pom.xml
 
     - name: Upload Release Asset
       uses: actions/upload-release-asset@v1

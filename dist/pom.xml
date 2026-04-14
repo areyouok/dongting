@@ -42,8 +42,11 @@
             <version>0.8-SNAPSHOT</version>
         </dependency>
     </dependencies>
+    <properties>
+        <dist.basename>dongting-dist</dist.basename>
+    </properties>
     <build>
-        <finalName>dongting-ops-${project.version}</finalName>
+        <finalName>dongting-dist-${project.version}</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -76,6 +79,27 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>3.2.0</version>
+                <executions>
+                    <execution>
+                        <id>create-dist-zip</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <zip destfile="${project.basedir}/../target/${dist.basename}.zip">
+                                    <zipfileset dir="${project.basedir}/../target/dongting-dist" prefix="${dist.basename}"/>
+                                </zip>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
     <profiles>
@@ -85,16 +109,12 @@
                 <plugins>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-assembly-plugin</artifactId>
-                        <version>3.8.0</version>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <version>3.2.0</version>
                         <executions>
                             <execution>
-                                <id>make-assembly</id>
-                                <configuration>
-                                    <formats>
-                                        <format>dir</format>
-                                    </formats>
-                                </configuration>
+                                <id>create-dist-zip</id>
+                                <phase>none</phase>
                             </execution>
                         </executions>
                     </plugin>
@@ -124,8 +144,9 @@
                                             <arg value="jlink-cut.bat"/>
                                         </exec>
                                         <echo message="Packaging dongting-dist.zip with trimmed JRE..."/>
-                                        <zip destfile="${project.basedir}/../target/dongting-dist.zip"
-                                             basedir="${project.basedir}/../target/dongting-dist"/>
+                                        <zip destfile="${project.basedir}/../target/${dist.basename}.zip">
+                                            <zipfileset dir="${project.basedir}/../target/dongting-dist" prefix="${dist.basename}"/>
+                                        </zip>
                                     </target>
                                 </configuration>
                             </execution>
