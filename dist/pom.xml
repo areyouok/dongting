@@ -78,4 +78,43 @@
             </plugin>
         </plugins>
     </build>
+    <profiles>
+        <profile>
+            <id>addJRE</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <version>3.2.0</version>
+                        <executions>
+                            <execution>
+                                <id>run-jlink-cut</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <target>
+                                        <echo message="Running jlink-cut for trimmed JRE..."/>
+                                        <exec executable="./jlink-cut.sh"
+                                              dir="${project.basedir}/../target/dongting-dist/bin"
+                                              osfamily="unix"
+                                              failonerror="true"/>
+                                        <exec executable="cmd"
+                                              dir="${project.basedir}/../target/dongting-dist/bin"
+                                              osfamily="windows"
+                                              failonerror="true">
+                                            <arg value="/c"/>
+                                            <arg value="jlink-cut.bat"/>
+                                        </exec>
+                                    </target>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
