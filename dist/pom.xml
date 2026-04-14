@@ -85,6 +85,21 @@
                 <plugins>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-assembly-plugin</artifactId>
+                        <version>3.8.0</version>
+                        <executions>
+                            <execution>
+                                <id>make-assembly</id>
+                                <configuration>
+                                    <formats>
+                                        <format>dir</format>
+                                    </formats>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-antrun-plugin</artifactId>
                         <version>3.2.0</version>
                         <executions>
@@ -108,6 +123,9 @@
                                             <arg value="/c"/>
                                             <arg value="jlink-cut.bat"/>
                                         </exec>
+                                        <echo message="Packaging dongting-dist.zip with trimmed JRE..."/>
+                                        <zip destfile="${project.basedir}/../target/dongting-dist.zip"
+                                             basedir="${project.basedir}/../target/dongting-dist"/>
                                     </target>
                                 </configuration>
                             </execution>
