@@ -29,6 +29,7 @@ jobs:
       run: mvn -B clean package -DskipUTs --file pom.xml
 
     - name: Publish to GitHub Packages Apache Maven
+      if: ${{ github.repository_owner == 'dtprj' }}
       run: mvn -B deploy -s $GITHUB_WORKSPACE/settings.xml -Dmaven.test.skip=true
       env:
         GITHUB_TOKEN: ${{ github.token }}
