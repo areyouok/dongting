@@ -52,7 +52,11 @@ jobs:
       shell: bash
       run: |
         cd target
-        tar czf "${{ steps.main_asset.outputs.tar_name }}" dongting-dist
+        BASE_NAME="${{ steps.main_asset.outputs.tar_name }}"
+        BASE_NAME="${BASE_NAME%.tar.gz}"
+        cp -R dongting-dist "${BASE_NAME}"
+        tar czf "${BASE_NAME}.tar.gz" "${BASE_NAME}"
+        rm -rf "${BASE_NAME}"
 
     - name: Upload Release Asset (zip)
       uses: actions/upload-release-asset@v1
@@ -197,7 +201,9 @@ jobs:
       run: |
         BASE_NAME="${{ steps.metadata.outputs.base_name }}"
         cd target
-        tar czf "${BASE_NAME}.tar.gz" --transform "s/^dongting-dist/${BASE_NAME}/" dongting-dist
+        cp -R dongting-dist "${BASE_NAME}"
+        tar czf "${BASE_NAME}.tar.gz" "${BASE_NAME}"
+        rm -rf "${BASE_NAME}"
 
     - name: Upload Release Asset
       uses: actions/upload-release-asset@v1
