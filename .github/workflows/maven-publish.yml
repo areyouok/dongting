@@ -59,25 +59,13 @@ jobs:
         tar czf "${BASE_NAME}.tar.gz" "${BASE_NAME}"
         rm -rf "${BASE_NAME}"
 
-    - name: Upload Release Asset (zip)
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ github.token }}
+    - name: Upload Release Assets
+      uses: softprops/action-gh-release@v3
       with:
-        upload_url: ${{ github.event.release.upload_url }}
-        asset_path: ./target/${{ steps.main_asset.outputs.zip_name }}
-        asset_name: ${{ steps.main_asset.outputs.zip_name }}
-        asset_content_type: application/zip
-
-    - name: Upload Release Asset (tar.gz)
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ github.token }}
-      with:
-        upload_url: ${{ github.event.release.upload_url }}
-        asset_path: ./target/${{ steps.main_asset.outputs.tar_name }}
-        asset_name: ${{ steps.main_asset.outputs.tar_name }}
-        asset_content_type: application/gzip
+        fail_on_unmatched_files: true
+        files: |
+          ./target/${{ steps.main_asset.outputs.zip_name }}
+          ./target/${{ steps.main_asset.outputs.tar_name }}
 
   build-release-assets:
     strategy:
@@ -207,11 +195,7 @@ jobs:
         rm -rf "${BASE_NAME}"
 
     - name: Upload Release Asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ github.token }}
+      uses: softprops/action-gh-release@v3
       with:
-        upload_url: ${{ github.event.release.upload_url }}
-        asset_path: ./target/${{ steps.metadata.outputs.asset_name }}
-        asset_name: ${{ steps.metadata.outputs.asset_name }}
-        asset_content_type: ${{ matrix.packaging == 'tar.gz' && 'application/gzip' || 'application/zip' }}
+        fail_on_unmatched_files: true
+        files: ./target/${{ steps.metadata.outputs.asset_name }}
