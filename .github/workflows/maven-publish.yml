@@ -45,17 +45,34 @@ jobs:
           echo "Failed to detect DONGTING_VERSION" >&2
           exit 1
         fi
-        echo "asset_name=dongting-dist-${DONGTING_VERSION}.zip" >> "$GITHUB_OUTPUT"
+        echo "zip_name=dongting-dist-${DONGTING_VERSION}.zip" >> "$GITHUB_OUTPUT"
+        echo "tar_name=dongting-dist-${DONGTING_VERSION}.tar.gz" >> "$GITHUB_OUTPUT"
 
-    - name: Upload Release Asset
+    - name: Create tar.gz package
+      shell: bash
+      run: |
+        cd target
+        tar czf "${{ steps.main_asset.outputs.tar_name }}" dongting-dist
+
+    - name: Upload Release Asset (zip)
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ github.token }}
       with:
         upload_url: ${{ github.event.release.upload_url }}
         asset_path: ./target/dongting-dist.zip
-        asset_name: ${{ steps.main_asset.outputs.asset_name }}
+        asset_name: ${{ steps.main_asset.outputs.zip_name }}
         asset_content_type: application/zip
+
+    - name: Upload Release Asset (tar.gz)
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      with:
+        upload_url: ${{ github.event.release.upload_url }}
+        asset_path: ./target/${{ steps.main_asset.outputs.tar_name }}
+        asset_name: ${{ steps.main_asset.outputs.tar_name }}
+        asset_content_type: application/gzip
 
   build-release-assets:
     strategy:
@@ -67,31 +84,37 @@ jobs:
           build_variant: standard
           asset_suffix: linux
           extra_profiles: ''
+          packaging: tar.gz
         - runner: windows-latest
           java_version: '17'
           build_variant: standard
           asset_suffix: windows
           extra_profiles: ''
+          packaging: zip
         - runner: macos-15
           java_version: '17'
           build_variant: standard
           asset_suffix: macos-arm
           extra_profiles: ''
+          packaging: tar.gz
         - runner: ubuntu-latest
           java_version: '11'
           build_variant: minimal
           asset_suffix: linux
           extra_profiles: ',minimalDist'
+          packaging: tar.gz
         - runner: windows-latest
           java_version: '11'
           build_variant: minimal
           asset_suffix: windows
           extra_profiles: ',minimalDist'
+          packaging: zip
         - runner: macos-15
           java_version: '11'
           build_variant: minimal
           asset_suffix: macos-arm
           extra_profiles: ',minimalDist'
+          packaging: tar.gz
 
     runs-on: ${{ matrix.runner }}
     permissions:
@@ -133,6 +156,7 @@ jobs:
       env:
         ASSET_SUFFIX: ${{ matrix.asset_suffix }}
         BUILD_VARIANT: ${{ matrix.build_variant }}
+        PACKAGING: ${{ matrix.packaging }}
         RELEASE_TAG: ${{ github.event.release.tag_name }}
       run: |
         DONGTING_VERSION=${RELEASE_TAG#v}
@@ -156,7 +180,7 @@ jobs:
           BASE_NAME="dongting-dist-${DONGTING_VERSION}-${ASSET_SUFFIX}-jre${JAVA_VERSION}"
         fi
         echo "base_name=$BASE_NAME" >> "$GITHUB_OUTPUT"
-        echo "asset_name=$BASE_NAME.zip" >> "$GITHUB_OUTPUT"
+        echo "asset_name=$BASE_NAME.${PACKAGING}" >> "$GITHUB_OUTPUT"
 
     - name: Build release asset
       shell: bash
@@ -167,6 +191,14 @@ jobs:
           mvn -B clean package -pl dist -am -DskipUTs -PaddJRE -Ddist.basename=${{ steps.metadata.outputs.base_name }} --file pom.xml
         fi
 
+    - name: Create tar.gz package
+      if: ${{ matrix.packaging == 'tar.gz' }}
+      shell: bash
+      run: |
+        BASE_NAME="${{ steps.metadata.outputs.base_name }}"
+        cd target
+        tar czf "${BASE_NAME}.tar.gz" --transform "s/^dongting-dist/${BASE_NAME}/" dongting-dist
+
     - name: Upload Release Asset
       uses: actions/upload-release-asset@v1
       env:
@@ -175,4 +207,4 @@ jobs:
         upload_url: ${{ github.event.release.upload_url }}
         asset_path: ./target/${{ steps.metadata.outputs.asset_name }}
         asset_name: ${{ steps.metadata.outputs.asset_name }}
-        asset_content_type: application/zip
+        asset_content_type: ${{ matrix.packaging == 'tar.gz' && 'application/gzip' || 'application/zip' }}
