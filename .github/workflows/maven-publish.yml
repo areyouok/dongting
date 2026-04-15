@@ -34,6 +34,19 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ github.token }}
 
+    - name: Detect main asset name
+      id: main_asset
+      shell: bash
+      env:
+        RELEASE_TAG: ${{ github.event.release.tag_name }}
+      run: |
+        DONGTING_VERSION=${RELEASE_TAG#v}
+        if [ -z "$DONGTING_VERSION" ]; then
+          echo "Failed to detect DONGTING_VERSION" >&2
+          exit 1
+        fi
+        echo "asset_name=dongting-dist-${DONGTING_VERSION}.zip" >> "$GITHUB_OUTPUT"
+
     - name: Upload Release Asset
       uses: actions/upload-release-asset@v1
       env:
@@ -41,11 +54,10 @@ jobs:
       with:
         upload_url: ${{ github.event.release.upload_url }}
         asset_path: ./target/dongting-dist.zip
-        asset_name: dongting-dist.zip
+        asset_name: ${{ steps.main_asset.outputs.asset_name }}
         asset_content_type: application/zip
 
   build-release-assets:
-    needs: publish-maven
     strategy:
       fail-fast: false
       matrix:
@@ -75,7 +87,13 @@ jobs:
       shell: bash
       env:
         ASSET_SUFFIX: ${{ matrix.asset_suffix }}
+        RELEASE_TAG: ${{ github.event.release.tag_name }}
       run: |
+        DONGTING_VERSION=${RELEASE_TAG#v}
+        if [ -z "$DONGTING_VERSION" ]; then
+          echo "Failed to detect DONGTING_VERSION" >&2
+          exit 1
+        fi
         JAVA_SETTINGS=$(java -XshowSettings:properties -version 2>&1 || true)
         JAVA_VERSION=$(printf '%s\n' "$JAVA_SETTINGS" | awk -F'= ' '/^[[:space:]]*java.version = / {print $2; exit}')
         if [ -z "$JAVA_VERSION" ]; then
@@ -85,10 +103,10 @@ jobs:
           echo "Failed to detect JAVA_VERSION" >&2
           exit 1
         fi
-        JAVA_VERSION_SUFFIX=$(printf '%s' "$JAVA_VERSION" | sed 's/[^0-9A-Za-z]/-/g')
+        echo "dongting_version=$DONGTING_VERSION" >> "$GITHUB_OUTPUT"
         echo "java_version=$JAVA_VERSION" >> "$GITHUB_OUTPUT"
-        echo "base_name=dongting-dist-${ASSET_SUFFIX}-jre${JAVA_VERSION_SUFFIX}" >> "$GITHUB_OUTPUT"
-        echo "asset_name=dongting-dist-${ASSET_SUFFIX}-jre${JAVA_VERSION_SUFFIX}.zip" >> "$GITHUB_OUTPUT"
+        echo "base_name=dongting-dist-${DONGTING_VERSION}-${ASSET_SUFFIX}-jre${JAVA_VERSION}" >> "$GITHUB_OUTPUT"
+        echo "asset_name=dongting-dist-${DONGTING_VERSION}-${ASSET_SUFFIX}-jre${JAVA_VERSION}.zip" >> "$GITHUB_OUTPUT"
 
     - name: Build release asset
       shell: bash
