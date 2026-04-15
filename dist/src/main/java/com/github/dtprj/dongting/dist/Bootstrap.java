@@ -67,6 +67,7 @@ public class Bootstrap {
     private volatile RaftServer raftServer;
 
     public static void main(String[] args) {
+        DistLogConfig.init();
         Bootstrap bootstrap = new Bootstrap();
         bootstrap.run(args);
         if (bootstrap.exitCode != 0) {

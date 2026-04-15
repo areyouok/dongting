@@ -85,6 +85,7 @@ public class DtBenchmark {
     private int exitCode;
 
     public static void main(String[] args) throws Exception {
+        DistLogConfig.init();
         DtBenchmark benchmark = new DtBenchmark();
         benchmark.run(args);
         System.exit(benchmark.exitCode);

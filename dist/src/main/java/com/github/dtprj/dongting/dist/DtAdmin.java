@@ -50,6 +50,7 @@ public class DtAdmin {
     private int exitCode;
 
     public static void main(String[] args) {
+        DistLogConfig.init();
         DtAdmin d = new DtAdmin();
         d.run(args);
         System.exit(d.exitCode);

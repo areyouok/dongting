@@ -39,10 +39,19 @@ if (-not (Test-Path $LOG_DIR)) {
     New-Item -ItemType Directory -Path $LOG_DIR -Force | Out-Null
 }
 
+$LogConfigArgs = @()
+if (Test-Path (Join-Path $CONF_DIR "logback-benchmark.xml")) {
+    $LogConfigArgs += "-Dlogback.configurationFile=$CONF_DIR\logback-benchmark.xml"
+}
+if (Test-Path (Join-Path $CONF_DIR "logging-benchmark.properties")) {
+    $LogConfigArgs += "-Ddongting.logging.config.file=$CONF_DIR\logging-benchmark.properties"
+}
+
 $Arguments = $JavaOpts + @(
-    "-DLOG_DIR=$LOG_DIR",
-    "-Dlogback.configurationFile=$CONF_DIR\logback-benchmark.xml",
+    "-DLOG_DIR=$LOG_DIR"
+) + $LogConfigArgs + @(
     "--module-path", $LIB_DIR,
+    "--add-modules", "ALL-MODULE-PATH",
     "--add-exports", "java.base/jdk.internal.misc=dongting.client",
     "-m", "dongting.dist/com.github.dtprj.dongting.dist.DtBenchmark",
     "-s", (Join-Path $CONF_DIR "client.properties")

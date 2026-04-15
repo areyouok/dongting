@@ -94,11 +94,20 @@ mkdir -p "$LOG_DIR" || {
 }
 
 # Start the application using module path in background and record PID
+LOG_CONFIG_OPTS=()
+if [ -f "$CONF_DIR/logback-server.xml" ]; then
+    LOG_CONFIG_OPTS+=("-Dlogback.configurationFile=$CONF_DIR/logback-server.xml")
+fi
+if [ -f "$CONF_DIR/logging-server.properties" ]; then
+    LOG_CONFIG_OPTS+=("-Ddongting.logging.config.file=$CONF_DIR/logging-server.properties")
+fi
+
 nohup "$JAVA" $JAVA_OPTS \
     -DDATA_DIR="$DATA_DIR" \
     -DLOG_DIR="$LOG_DIR" \
-    -Dlogback.configurationFile="$CONF_DIR/logback-server.xml" \
+    "${LOG_CONFIG_OPTS[@]}" \
     --module-path "$LIB_DIR" \
+    --add-modules ALL-MODULE-PATH \
     --add-exports java.base/jdk.internal.misc=dongting.client \
     -m dongting.dist/com.github.dtprj.dongting.dist.Bootstrap \
     -c "$CONF_DIR/config.properties" \

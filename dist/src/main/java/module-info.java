@@ -15,8 +15,9 @@
  */
 
 module dongting.dist {
-    requires org.slf4j;
-    requires ch.qos.logback.classic;
+    requires static org.slf4j;
+    requires static ch.qos.logback.classic;
+    requires java.logging;
     requires dongting.client;
     requires dongting.server;
     exports com.github.dtprj.dongting.dist;

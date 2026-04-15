@@ -42,12 +42,20 @@ mkdir -p "$LOG_DIR" || {
 }
 
 # Launch DtBenchmark in foreground so stdout/stderr reach the console
+LOG_CONFIG_OPTS=()
+if [ -f "$CONF_DIR/logback-benchmark.xml" ]; then
+    LOG_CONFIG_OPTS+=("-Dlogback.configurationFile=$CONF_DIR/logback-benchmark.xml")
+fi
+if [ -f "$CONF_DIR/logging-benchmark.properties" ]; then
+    LOG_CONFIG_OPTS+=("-Ddongting.logging.config.file=$CONF_DIR/logging-benchmark.properties")
+fi
+
 "$JAVA" $JAVA_OPTS \
     -DLOG_DIR="$LOG_DIR" \
-    -Dlogback.configurationFile="$CONF_DIR/logback-benchmark.xml" \
+    "${LOG_CONFIG_OPTS[@]}" \
     --module-path "$LIB_DIR" \
+    --add-modules ALL-MODULE-PATH \
     --add-exports java.base/jdk.internal.misc=dongting.client \
     -m dongting.dist/com.github.dtprj.dongting.dist.DtBenchmark \
     -s "$CONF_DIR/client.properties" \
     "$@"
-

@@ -94,12 +94,21 @@ if (Test-Path $PidFile) {
 
 # Build arguments
 # CONSOLE_LOG_LEVEL=INFO enables console logging for Windows foreground mode
+$LogConfigArgs = @()
+if (Test-Path (Join-Path $CONF_DIR "logback-server.xml")) {
+    $LogConfigArgs += "-Dlogback.configurationFile=$CONF_DIR\logback-server.xml"
+}
+if (Test-Path (Join-Path $CONF_DIR "logging-server.properties")) {
+    $LogConfigArgs += "-Ddongting.logging.config.file=$CONF_DIR\logging-server.properties"
+}
+
 $Arguments = $JavaOpts + @(
     "-DDATA_DIR=$DATA_DIR",
     "-DLOG_DIR=$LOG_DIR",
-    "-DCONSOLE_LOG_LEVEL=INFO",
-    "-Dlogback.configurationFile=$CONF_DIR\logback-server.xml",
+    "-DCONSOLE_LOG_LEVEL=INFO"
+) + $LogConfigArgs + @(
     "--module-path", $LIB_DIR,
+    "--add-modules", "ALL-MODULE-PATH",
     "--add-exports", "java.base/jdk.internal.misc=dongting.client",
     "-m", "dongting.dist/com.github.dtprj.dongting.dist.Bootstrap",
     "-c", (Join-Path $CONF_DIR "config.properties"),

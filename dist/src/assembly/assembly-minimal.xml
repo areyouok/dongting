@@ -15,14 +15,13 @@
   ~ under the License.
   -->
 <assembly>
-    <id>dist</id>
+    <id>dist-minimal</id>
     <formats>
         <format>dir</format>
     </formats>
     <includeBaseDirectory>false</includeBaseDirectory>
 
     <fileSets>
-        <!-- copy bat scripts with CRLF line endings -->
         <fileSet>
             <directory>${project.basedir}/src/bin</directory>
             <outputDirectory>bin</outputDirectory>
@@ -32,7 +31,6 @@
             <fileMode>0755</fileMode>
             <lineEnding>crlf</lineEnding>
         </fileSet>
-        <!-- copy other bin scripts (shell scripts) -->
         <fileSet>
             <directory>${project.basedir}/src/bin</directory>
             <outputDirectory>bin</outputDirectory>
@@ -41,15 +39,13 @@
             </excludes>
             <fileMode>0755</fileMode>
         </fileSet>
-        <!-- copy conf files -->
         <fileSet>
             <directory>${project.basedir}/src/conf</directory>
             <outputDirectory>conf</outputDirectory>
             <excludes>
-                <exclude>logging-*.properties</exclude>
+                <exclude>logback-*.xml</exclude>
             </excludes>
         </fileSet>
-        <!-- create empty log directory -->
         <fileSet>
             <directory>${project.basedir}/src/assembly</directory>
             <outputDirectory>logs</outputDirectory>
@@ -57,7 +53,6 @@
                 <exclude>**/*</exclude>
             </excludes>
         </fileSet>
-        <!-- create empty data directory -->
         <fileSet>
             <directory>${project.basedir}/src/assembly</directory>
             <outputDirectory>data</outputDirectory>
@@ -65,12 +60,10 @@
                 <exclude>**/*</exclude>
             </excludes>
         </fileSet>
-        <!-- copy docs directory -->
         <fileSet>
             <directory>${project.basedir}/../docs</directory>
             <outputDirectory>docs</outputDirectory>
         </fileSet>
-        <!-- copy docs directory -->
         <fileSet>
             <directory>${project.basedir}/..</directory>
             <includes>
@@ -84,11 +77,8 @@
         <dependencySet>
             <outputDirectory>lib</outputDirectory>
             <useProjectArtifact>true</useProjectArtifact>
-            <useTransitiveDependencies>true</useTransitiveDependencies>
+            <useTransitiveDependencies>false</useTransitiveDependencies>
             <includes>
-                <include>org.slf4j:slf4j-api</include>
-                <include>ch.qos.logback:logback-classic</include>
-                <include>ch.qos.logback:logback-core</include>
                 <include>com.github.dtprj.dongting:dongting-client</include>
                 <include>com.github.dtprj.dongting:dongting-server</include>
                 <include>com.github.dtprj.dongting:dongting-dist</include>

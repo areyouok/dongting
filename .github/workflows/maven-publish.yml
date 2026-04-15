@@ -63,11 +63,35 @@ jobs:
       matrix:
         include:
         - runner: ubuntu-latest
+          java_version: '17'
+          build_variant: standard
           asset_suffix: linux
+          extra_profiles: ''
         - runner: windows-latest
+          java_version: '17'
+          build_variant: standard
           asset_suffix: windows
+          extra_profiles: ''
         - runner: macos-15
+          java_version: '17'
+          build_variant: standard
           asset_suffix: macos-arm
+          extra_profiles: ''
+        - runner: ubuntu-latest
+          java_version: '11'
+          build_variant: minimal
+          asset_suffix: linux
+          extra_profiles: ',minimalDist'
+        - runner: windows-latest
+          java_version: '11'
+          build_variant: minimal
+          asset_suffix: windows
+          extra_profiles: ',minimalDist'
+        - runner: macos-15
+          java_version: '11'
+          build_variant: minimal
+          asset_suffix: macos-arm
+          extra_profiles: ',minimalDist'
 
     runs-on: ${{ matrix.runner }}
     permissions:
@@ -75,18 +99,40 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: Set up JDK 17
+    - name: Set up JDK
+      if: ${{ matrix.build_variant == 'standard' }}
+      uses: actions/setup-java@v4
+      with:
+        java-version: ${{ matrix.java_version }}
+        distribution: 'temurin'
+        cache: maven
+
+    - name: Set up JDK 17 for minimal dependencies
+      if: ${{ matrix.build_variant == 'minimal' }}
       uses: actions/setup-java@v4
       with:
         java-version: '17'
         distribution: 'temurin'
         cache: maven
 
+    - name: Install dependencies for minimal build
+      if: ${{ matrix.build_variant == 'minimal' }}
+      shell: bash
+      run: mvn -B install -pl test-support,client-ex,client,server -am -Dmaven.test.skip=true -Dmaven.install.skip=false --file pom.xml
+
+    - name: Set up JDK 11 for minimal asset build
+      if: ${{ matrix.build_variant == 'minimal' }}
+      uses: actions/setup-java@v4
+      with:
+        java-version: ${{ matrix.java_version }}
+        distribution: 'temurin'
+
     - name: Detect asset name
       id: metadata
       shell: bash
       env:
         ASSET_SUFFIX: ${{ matrix.asset_suffix }}
+        BUILD_VARIANT: ${{ matrix.build_variant }}
         RELEASE_TAG: ${{ github.event.release.tag_name }}
       run: |
         DONGTING_VERSION=${RELEASE_TAG#v}
@@ -103,14 +149,23 @@ jobs:
           echo "Failed to detect JAVA_VERSION" >&2
           exit 1
         fi
-        echo "dongting_version=$DONGTING_VERSION" >> "$GITHUB_OUTPUT"
         echo "java_version=$JAVA_VERSION" >> "$GITHUB_OUTPUT"
-        echo "base_name=dongting-dist-${DONGTING_VERSION}-${ASSET_SUFFIX}-jre${JAVA_VERSION}" >> "$GITHUB_OUTPUT"
-        echo "asset_name=dongting-dist-${DONGTING_VERSION}-${ASSET_SUFFIX}-jre${JAVA_VERSION}.zip" >> "$GITHUB_OUTPUT"
+        if [ "$BUILD_VARIANT" = "minimal" ]; then
+          BASE_NAME="dongting-dist-${DONGTING_VERSION}-minimal-${ASSET_SUFFIX}-jre${JAVA_VERSION}"
+        else
+          BASE_NAME="dongting-dist-${DONGTING_VERSION}-${ASSET_SUFFIX}-jre${JAVA_VERSION}"
+        fi
+        echo "base_name=$BASE_NAME" >> "$GITHUB_OUTPUT"
+        echo "asset_name=$BASE_NAME.zip" >> "$GITHUB_OUTPUT"
 
     - name: Build release asset
       shell: bash
-      run: mvn -B clean package -DskipUTs -PaddJRE -Ddist.basename=${{ steps.metadata.outputs.base_name }} --file pom.xml
+      run: |
+        if [ "${{ matrix.build_variant }}" = "minimal" ]; then
+          mvn -B -f dist/pom.xml clean package -Dmaven.test.skip=true -PaddJRE${{ matrix.extra_profiles }} -Ddist.basename=${{ steps.metadata.outputs.base_name }}
+        else
+          mvn -B clean package -pl dist -am -DskipUTs -PaddJRE -Ddist.basename=${{ steps.metadata.outputs.base_name }} --file pom.xml
+        fi
 
     - name: Upload Release Asset
       uses: actions/upload-release-asset@v1
