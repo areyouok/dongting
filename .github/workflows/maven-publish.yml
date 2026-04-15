@@ -48,13 +48,14 @@ jobs:
         echo "zip_name=dongting-dist-${DONGTING_VERSION}.zip" >> "$GITHUB_OUTPUT"
         echo "tar_name=dongting-dist-${DONGTING_VERSION}.tar.gz" >> "$GITHUB_OUTPUT"
 
-    - name: Create tar.gz package
+    - name: Repackage assets with versioned directory name
       shell: bash
       run: |
         cd target
         BASE_NAME="${{ steps.main_asset.outputs.tar_name }}"
         BASE_NAME="${BASE_NAME%.tar.gz}"
         cp -R dongting-dist "${BASE_NAME}"
+        zip -rq "${{ steps.main_asset.outputs.zip_name }}" "${BASE_NAME}"
         tar czf "${BASE_NAME}.tar.gz" "${BASE_NAME}"
         rm -rf "${BASE_NAME}"
 
@@ -64,7 +65,7 @@ jobs:
         GITHUB_TOKEN: ${{ github.token }}
       with:
         upload_url: ${{ github.event.release.upload_url }}
-        asset_path: ./target/dongting-dist.zip
+        asset_path: ./target/${{ steps.main_asset.outputs.zip_name }}
         asset_name: ${{ steps.main_asset.outputs.zip_name }}
         asset_content_type: application/zip
 
