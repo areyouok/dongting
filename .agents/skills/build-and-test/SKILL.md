@@ -14,6 +14,9 @@ This skill provides commands and patterns for building and testing the Dongting 
 | Command | Purpose |
 |---------|---------|
 | `mvn clean package -DskipUTs` | Full build (skips unit tests) |
+| `mvn clean package -DskipUTs -PminimalDist` | Minimal dist (no slf4j/logback) |
+| `mvn clean package -DskipUTs -PaddJRE` | Dist with trimmed JRE (jlink) |
+| `mvn clean package -DskipUTs -PminimalDist,addJRE` | Minimal dist with trimmed JRE (no slf4j/logback/java.xml) |
 | `mvn clean compile test-compile` | Compile with protobuf |
 
 ### Unit Testing
