@@ -53,6 +53,7 @@ public class DtAdmin {
         DistLogConfig.init();
         DtAdmin d = new DtAdmin();
         d.run(args);
+        DistLogConfig.close();
         System.exit(d.exitCode);
     }
 

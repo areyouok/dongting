@@ -71,6 +71,7 @@ public class Bootstrap {
         Bootstrap bootstrap = new Bootstrap();
         bootstrap.run(args);
         if (bootstrap.exitCode != 0) {
+            DistLogConfig.close();
             System.exit(bootstrap.exitCode);
         }
         Runtime.getRuntime().addShutdownHook(new Thread(() ->
@@ -300,5 +301,6 @@ public class Bootstrap {
             raftServer.stop(timeout);
             raftServer = null;
         }
+        DistLogConfig.close();
     }
 }

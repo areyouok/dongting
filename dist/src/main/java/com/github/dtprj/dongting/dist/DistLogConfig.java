@@ -39,6 +39,7 @@ import java.util.regex.Pattern;
 public final class DistLogConfig {
     private static final String DIST_LOG_CONFIG_FILE = "dongting.logging.config.file";
     private static final Pattern VAR_PATTERN = Pattern.compile("\\$\\{([^}]+)}");
+    private static volatile boolean julLoaded;
 
     private DistLogConfig() {
     }
@@ -65,27 +66,28 @@ public final class DistLogConfig {
             try (ByteArrayInputStream in = new ByteArrayInputStream(configText.getBytes(StandardCharsets.UTF_8))) {
                 LogManager.getLogManager().readConfiguration(in);
             }
-            registerShutdownHook();
+            julLoaded = true;
         } catch (Throwable e) {
             System.err.println("Failed to initialize JDK logging from " + configFile + ": " + e);
             e.printStackTrace();
         }
     }
 
-    private static void registerShutdownHook() {
-        Runnable hook = () -> {
-            try {
-                Logger root = Logger.getLogger("");
-                for (Handler h : root.getHandlers()) {
-                    try {
-                        h.flush();
-                    } catch (Exception ignored) {
-                    }
+    public static void close() {
+        if (!julLoaded) {
+            return;
+        }
+        julLoaded = false;
+        try {
+            Logger root = Logger.getLogger("");
+            for (Handler h : root.getHandlers()) {
+                try {
+                    h.close();
+                } catch (Exception ignored) {
                 }
-            } catch (Exception ignored) {
             }
-        };
-        Runtime.getRuntime().addShutdownHook(new Thread(hook, "jdk-log-shutdown"));
+        } catch (Exception ignored) {
+        }
     }
 
     static String substituteSystemProperties(String configText) {

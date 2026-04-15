@@ -87,7 +87,11 @@ public class DtBenchmark {
     public static void main(String[] args) throws Exception {
         DistLogConfig.init();
         DtBenchmark benchmark = new DtBenchmark();
-        benchmark.run(args);
+        try {
+            benchmark.run(args);
+        } finally {
+            DistLogConfig.close();
+        }
         System.exit(benchmark.exitCode);
     }
 
@@ -481,6 +485,7 @@ public class DtBenchmark {
         for (KvClient client : clients) {
             client.stop(timeout);
         }
+        DistLogConfig.close();
     }
 
     private void shutdownThreadExecutor() {

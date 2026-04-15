@@ -21,11 +21,14 @@ import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -45,9 +48,20 @@ public class DistLogConfigTest {
         System.clearProperty("testKey");
         System.clearProperty("testKey2");
         System.clearProperty("testKey3");
+        resetJulLoaded();
         LogManager.getLogManager().reset();
         LogManager.getLogManager().readConfiguration();
         deleteRecursively(tempDir);
+    }
+
+    private static void resetJulLoaded() {
+        try {
+            Field f = DistLogConfig.class.getDeclaredField("julLoaded");
+            f.setAccessible(true);
+            f.set(null, false);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void deleteRecursively(Path dir) throws IOException {
@@ -393,5 +407,76 @@ public class DistLogConfigTest {
         Files.writeString(configFile, "this is not valid === properties\n");
         System.setProperty("dongting.logging.config.file", configFile.toString());
         assertDoesNotThrow(DistLogConfig::loadConfig);
+    }
+
+    // --- close tests ---
+
+    @Test
+    void closeWithoutLoadConfigIsNoOp() {
+        LogManager.getLogManager().reset();
+        TestHandler th = new TestHandler();
+        Logger.getLogger("").addHandler(th);
+
+        DistLogConfig.close();
+
+        assertFalse(th.closed);
+    }
+
+    @Test
+    void closeAfterLoadConfigClosesHandlers() throws IOException {
+        Path configFile = tempDir.resolve("close-test.properties");
+        Files.writeString(configFile, "handlers=java.util.logging.ConsoleHandler\n.level=INFO\n");
+        System.setProperty("dongting.logging.config.file", configFile.toString());
+        DistLogConfig.loadConfig();
+
+        TestHandler th = new TestHandler();
+        Logger.getLogger("").addHandler(th);
+
+        DistLogConfig.close();
+
+        assertTrue(th.closed);
+    }
+
+    @Test
+    void closeIsIdempotent() throws IOException {
+        Path configFile = tempDir.resolve("idempotent.properties");
+        Files.writeString(configFile, "handlers=java.util.logging.ConsoleHandler\n.level=INFO\n");
+        System.setProperty("dongting.logging.config.file", configFile.toString());
+        DistLogConfig.loadConfig();
+
+        assertDoesNotThrow(() -> {
+            DistLogConfig.close();
+            DistLogConfig.close();
+        });
+    }
+
+    @Test
+    void loadConfigFailedDoesNotEnableClose() {
+        System.setProperty("dongting.logging.config.file", "/non/existent/path.properties");
+        DistLogConfig.loadConfig();
+
+        TestHandler th = new TestHandler();
+        Logger.getLogger("").addHandler(th);
+
+        DistLogConfig.close();
+
+        assertFalse(th.closed);
+    }
+
+    private static class TestHandler extends Handler {
+        boolean closed;
+
+        @Override
+        public void publish(LogRecord record) {
+        }
+
+        @Override
+        public void flush() {
+        }
+
+        @Override
+        public void close() {
+            closed = true;
+        }
     }
 }
