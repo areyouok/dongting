@@ -91,6 +91,7 @@ jobs:
         echo "asset_name=dongting-dist-${ASSET_SUFFIX}-jre${JAVA_VERSION_SUFFIX}.zip" >> "$GITHUB_OUTPUT"
 
     - name: Build release asset
+      shell: bash
       run: mvn -B clean package -DskipUTs -PaddJRE -Ddist.basename=${{ steps.metadata.outputs.base_name }} --file pom.xml
 
     - name: Upload Release Asset
